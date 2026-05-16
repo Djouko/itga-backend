@@ -158,7 +158,7 @@ Repos en ligne verifies:
 Backend + admin:
 https://github.com/Djouko/itga-backend.git
 Branche: main
-Commit verifie: 88a2eaf98c98f5c9820bde981fb0558b3afcae91
+Commit verifie: b23f542f9528102ec65d4ef1d2180e4d5c24e757
 
 Web:
 https://github.com/Djouko/itga-web.git
