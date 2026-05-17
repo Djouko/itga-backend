@@ -3619,12 +3619,28 @@ pre {
 .main-sidebar {
   position: fixed;
   top: 0;
-  height: 100%;
+  bottom: 0;
+  height: 100vh;
   width: 220px;
   background-color: var(--text-white);
   z-index: 880;
   left: 0;
   border-right: 2px solid #ebebeb;
+  overflow-x: hidden;
+  overflow-y: auto;
+  overscroll-behavior: contain;
+  scrollbar-color: rgba(103, 119, 239, 0.5) transparent;
+  scrollbar-width: thin;
+}
+.main-sidebar::-webkit-scrollbar {
+  width: 6px;
+}
+.main-sidebar::-webkit-scrollbar-track {
+  background: transparent;
+}
+.main-sidebar::-webkit-scrollbar-thumb {
+  background-color: rgba(103, 119, 239, 0.5);
+  border-radius: 999px;
 }
 .main-sidebar,
 .navbar,
@@ -3926,6 +3942,7 @@ body.sidebar-gone .main-sidebar {
 .main-sidebar .sidebar-menu {
   padding: 0 10px;
   margin: 0;
+  padding-bottom: 28px;
 }
 .main-sidebar .sidebar-menu li {
   display: block;
@@ -4231,6 +4248,9 @@ body:not(.sidebar-mini)
     position: fixed !important;
     margin-top: 0 !important;
     z-index: 891;
+    height: 100vh;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
   }
   body.layout-2 .main-wrapper,
   body.layout-3 .main-wrapper {
