@@ -30,6 +30,7 @@ return [
     */
 
     'production_cache_drivers' => [
+        'database',
         'redis',
         'memcached',
         'dynamodb',

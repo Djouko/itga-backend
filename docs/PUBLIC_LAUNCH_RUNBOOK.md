@@ -441,7 +441,7 @@ APP_URL=https://VOTRE-DOMAINE-BACKEND
 
 API_SECRET_KEY=UNE_LONGUE_CLE_SECRETE_IDENTIQUE_WEB_MOBILE
 ADMIN_API_SECRET_KEY=UNE_AUTRE_LONGUE_CLE_SECRETE_ADMIN
-PUBLIC_READINESS_TOKEN=UN_TOKEN_PRIVE_POUR_READINESS
+READINESS_TOKEN=UN_TOKEN_PRIVE_POUR_READINESS
 
 SESSION_SECURE_COOKIE=true
 QUEUE_CONNECTION=database
@@ -453,7 +453,7 @@ Regle tres importante:
 
 - `API_SECRET_KEY` va dans le backend, le web et le mobile.
 - `ADMIN_API_SECRET_KEY` reste seulement cote backend/admin.
-- `PUBLIC_READINESS_TOKEN` reste prive.
+- `READINESS_TOKEN` reste prive.
 - `APP_DEBUG` doit etre `false`.
 
 Si Hostinger propose Redis:
@@ -560,7 +560,7 @@ curl https://VOTRE-DOMAINE-BACKEND/api/health
 Puis:
 
 ```powershell
-curl -H "x-readiness-token: VOTRE_PUBLIC_READINESS_TOKEN" https://VOTRE-DOMAINE-BACKEND/api/readiness
+curl -H "x-readiness-token: VOTRE_READINESS_TOKEN" https://VOTRE-DOMAINE-BACKEND/api/readiness
 ```
 
 Si `curl` n'est pas pratique sur Windows, ouvre simplement:
