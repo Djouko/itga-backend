@@ -218,7 +218,7 @@ class GlobalFunction extends Model
         ];
 
         $storageDisk = $storageConfig[$storageType]['disk'] ?? 'public';
-        $baseUrl = $storageConfig[$storageType]['base_url'] ?? env('APP_URL') . 'storage/';
+        $baseUrl = $storageConfig[$storageType]['base_url'] ?? rtrim((string) env('APP_URL'), '/') . '/storage/';
 
         $appName = env('APP_NAME') ? env('APP_NAME') . '/' : '';
 
