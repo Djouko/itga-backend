@@ -19,7 +19,13 @@ return [
 
     'allowed_methods' => ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
 
-    'allowed_origins' => [env('APP_URL', 'https://itga.kekottech.com'), 'http://localhost:3000'],
+    'allowed_origins' => array_values(array_unique(array_filter(array_map('trim', explode(',', env(
+        'CORS_ALLOWED_ORIGINS',
+        implode(',', [
+            env('APP_URL', 'https://itga.kekottech.com'),
+            'http://localhost:3000',
+        ])
+    )))))),
 
     'allowed_origins_patterns' => [],
 
