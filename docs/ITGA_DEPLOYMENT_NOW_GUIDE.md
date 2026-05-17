@@ -216,6 +216,299 @@ Le risque: si tu remplaces le dossier directement sans backup, tu peux perdre:
 
 Donc on fait proprement.
 
+### 4.0 Reponse claire pour le backend Hostinger deja vivant
+
+Oui, on peut mettre a jour proprement le backend deja utilise par les tests web/mobile.
+
+Non, il ne faut pas simplement supprimer l'ancien dossier puis uploader le nouveau dossier en bloc.
+
+Ce qui existe deja en production est separe en 4 familles:
+
+1. Code Laravel: fichiers PHP, routes, controllers, migrations, config.
+2. Donnees MySQL: comptes, posts, rooms, comments, tokens, settings.
+3. Medias uploades: images/videos/documents deja envoyes par les utilisateurs.
+4. Secrets serveur: `.env`, credentials Firebase, cles API, mots de passe DB.
+
+La mise a jour doit remplacer seulement la famille 1, puis executer les migrations pour adapter la famille 2. Elle ne doit pas detruire les familles 3 et 4.
+
+Dans ce projet, les medias locaux sont principalement stockes ici:
+
+```text
+storage/app/public/uploads
+```
+
+Ils sont servis par le lien Laravel:
+
+```text
+public/storage -> storage/app/public
+```
+
+Il peut aussi y avoir des fichiers modifies par l'admin ici:
+
+```text
+public/asset
+```
+
+Donc ces chemins doivent etre sauvegardes avant toute bascule.
+
+### 4.0.1 Est-ce possible de passer par GitHub ?
+
+Oui, mais pas directement n'importe comment.
+
+Option A - Recommandee maintenant, car tu es en urgence:
+
+```text
+Archive propre locale -> Upload Hostinger -> Bascule controlee
+```
+
+Avantage:
+
+- pas de conflit Git sur le serveur
+- tu gardes le controle
+- tu ne touches pas brutalement au backend qui fonctionne deja
+- tu peux revenir a l'ancien dossier si probleme
+
+Option B - GitHub propre plus tard:
+
+```text
+Nouveau dossier vide/staging Hostinger -> clone/pull GitHub -> test -> bascule
+```
+
+Avantage:
+
+- les prochaines mises a jour seront plus simples
+
+Mais ne fais pas ceci directement dans le dossier backend actuel sans backup, parce que Hostinger peut refuser un deploy Git dans un dossier non vide ou creer un etat confus entre fichiers uploades manuellement et fichiers Git.
+
+### 4.0.2 Est-ce qu'il y aura des conflits ?
+
+Avec l'option archive propre, il n'y a pas de "conflit Git", car Git ne gere pas le dossier serveur actuel.
+
+Il y a seulement des risques d'ecrasement si tu copies mal les fichiers. Les fichiers a ne jamais ecraser/perdre sont:
+
+```text
+.env
+storage/app/public/uploads
+public/storage
+public/asset/apple-app-site-association
+public/asset/assetlinks.json
+googleCredentials.json ou itga-firebase-prod.json reel
+```
+
+La base de donnees ne sera pas effacee par l'upload du code. Elle change uniquement quand tu executes:
+
+```bash
+php artisan migrate --force
+```
+
+Les migrations ajoutent/modifient des tables. Elles ne doivent pas supprimer tes comptes/posts existants. Mais il faut toujours faire un export SQL avant, parce qu'une migration de production se traite comme une operation serieuse.
+
+### 4.0.3 Methode la plus sure pour ton cas exact
+
+Utilise une bascule en deux dossiers.
+
+Ancien dossier:
+
+```text
+itga-backend-current
+```
+
+Nouveau dossier:
+
+```text
+itga-backend-new
+```
+
+Principe:
+
+1. Tu gardes l'ancien backend intact.
+2. Tu prepares le nouveau backend a cote.
+3. Tu copies dedans seulement les secrets et medias necessaires.
+4. Tu testes.
+5. Tu renommes les dossiers pour basculer.
+6. Si probleme, tu reviens a l'ancien dossier.
+
+Cette methode evite le chaos.
+
+### 4.0.4 Procedure exacte sans GitHub sur Hostinger
+
+Etape 1 - Faire backup fichiers:
+
+```text
+Hostinger File Manager -> dossier backend actuel -> Compress -> Download
+```
+
+Etape 2 - Faire backup base de donnees:
+
+```text
+Hostinger hPanel -> Databases -> phpMyAdmin -> base ITGA -> Export -> SQL
+```
+
+Etape 3 - Noter le chemin exact du backend actuel.
+
+Exemples possibles:
+
+```text
+/home/u123456789/domains/itga.kekottech.com/public_html
+/home/u123456789/domains/itga.kekottech.com/public_html/api
+/home/u123456789/domains/itga.kekottech.com/itga-backend
+```
+
+Etape 4 - Dans l'ancien dossier, sauvegarder ces elements:
+
+```text
+.env
+storage/app/public/uploads
+public/storage
+public/asset/apple-app-site-association
+public/asset/assetlinks.json
+itga-firebase-prod.json ou autre credential Firebase reel
+```
+
+Etape 5 - Uploader l'archive propre:
+
+```text
+.deployment/itga-backend-main.zip
+```
+
+Etape 6 - Extraire dans un nouveau dossier:
+
+```text
+itga-backend-new
+```
+
+Etape 7 - Copier l'ancien `.env` dans `itga-backend-new`.
+
+Etape 8 - Mettre a jour le `.env` de `itga-backend-new` avec les valeurs du fichier local:
+
+```text
+secrets/ITGA_DEPLOYMENT_SECRETS.local.md
+```
+
+Etape 9 - Copier les credentials Firebase reels dans `itga-backend-new` si le backend en depend.
+
+Etape 10 - Copier ou reconnecter les medias.
+
+Si tu veux copier les medias:
+
+```bash
+cp -R /chemin/ancien/storage/app/public/uploads /chemin/nouveau/storage/app/public/
+```
+
+Si le dossier est tres gros, prefere `rsync`:
+
+```bash
+rsync -av /chemin/ancien/storage/app/public/uploads/ /chemin/nouveau/storage/app/public/uploads/
+```
+
+Etape 11 - Refaire le lien storage dans le nouveau dossier:
+
+```bash
+cd /chemin/nouveau
+php artisan storage:link
+```
+
+Etape 12 - Installer les dependances:
+
+```bash
+composer install --no-dev --optimize-autoloader
+```
+
+Etape 13 - Tester la config sans migrer:
+
+```bash
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan ops:public-readiness --json
+```
+
+Etape 14 - Si readiness OK, lancer les migrations:
+
+```bash
+php artisan migrate --force
+```
+
+Etape 15 - Tester les endpoints:
+
+```text
+https://itga.kekottech.com/api/health
+```
+
+Etape 16 - Basculer les dossiers.
+
+Exemple:
+
+```bash
+mv itga-backend itga-backend-old
+mv itga-backend-new itga-backend
+```
+
+Adapte les noms selon ton serveur.
+
+Etape 17 - Tester depuis web/mobile:
+
+- login
+- creation compte
+- feed
+- posts existants
+- images/videos existantes
+- upload nouveau post
+- suggestions rooms
+
+### 4.0.5 Methode avec GitHub plus tard
+
+Quand l'urgence est passee, on peut rendre Hostinger plus propre avec GitHub.
+
+Ne connecte pas GitHub directement au dossier actuel deja vivant.
+
+Fais plutot:
+
+1. Cree un sous-domaine staging:
+
+```text
+staging-api.itga.kekottech.com
+```
+
+2. Cree un dossier vide:
+
+```text
+staging-backend
+```
+
+3. Dans Hostinger Git, connecte:
+
+```text
+https://github.com/Djouko/itga-backend.git
+```
+
+4. Branche:
+
+```text
+main
+```
+
+5. Deploy dans `staging-backend`.
+6. Ajoute un `.env` staging.
+7. Connecte une copie de la DB ou la DB production en lecture prudente selon besoin.
+8. Teste.
+9. Quand staging est bon, tu peux basculer proprement.
+
+Apres cela, les futures mises a jour pourront etre:
+
+```bash
+git pull origin main
+composer install --no-dev --optimize-autoloader
+php artisan migrate --force
+php artisan optimize:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+```
+
+Mais cette methode doit venir apres avoir stabilise le dossier serveur, pas pendant une urgence avec un backend manuel deja utilise.
+
 ### 4.1 Faire une sauvegarde avant tout
 
 Dans Hostinger hPanel:
