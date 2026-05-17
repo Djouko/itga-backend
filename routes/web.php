@@ -118,6 +118,7 @@ Route::get('adminJobs', [ApplicationController::class, 'adminJobs'])->middleware
 Route::post('adminModerateJobWeb', [ApplicationController::class, 'adminModerateJobWeb'])->middleware(['checkLogin', 'superAdmin'])->name('adminModerateJobWeb');
 Route::get('adminCompanies', [ApplicationController::class, 'adminCompanies'])->middleware(['checkLogin'])->name('adminCompanies');
 Route::post('adminToggleSuspendCompanyWeb', [ApplicationController::class, 'adminToggleSuspendCompanyWeb'])->middleware(['checkLogin', 'superAdmin'])->name('adminToggleSuspendCompanyWeb');
+Route::post('adminToggleVerifyCompanyWeb', [ApplicationController::class, 'adminToggleVerifyCompanyWeb'])->middleware(['checkLogin', 'superAdmin'])->name('adminToggleVerifyCompanyWeb');
 Route::get('moderationAuditLogs', [UserController::class, 'moderationAuditLogs'])->middleware(['checkLogin'])->name('moderationAuditLogs');
 
 Route::get('setting', [SettingsController::class, 'settingView'])->middleware(['checkLogin'])->name('setting');

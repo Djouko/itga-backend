@@ -51,7 +51,7 @@
                             <th>Offres</th>
                             <th>Publiées</th>
                             <th>Statut</th>
-                            <th style="text-align: right; width: 180px;">Action</th>
+                            <th style="text-align: right; width: 260px;">Action</th>
                         </tr>
                     </thead>
                     <tbody>
@@ -85,11 +85,21 @@
                                         <span class="badge bg-success">Active</span>
                                     @endif
                                     @if ($company->is_verified)
-                                        <span class="badge bg-info">Vérifiée</span>
+                                        <span class="badge bg-info">Certifiee ITGA</span>
+                                    @endif
+                                    @if ($company->email_verified_at)
+                                        <span class="badge bg-secondary">Email valide</span>
                                     @endif
                                 </td>
                                 <td class="text-end">
-                                    <form method="POST" action="{{ route('adminToggleSuspendCompanyWeb') }}">
+                                    <form method="POST" action="{{ route('adminToggleVerifyCompanyWeb') }}" class="d-inline">
+                                        @csrf
+                                        <input type="hidden" name="company_id" value="{{ $company->id }}">
+                                        <button type="submit" class="btn btn-sm {{ $company->is_verified ? 'btn-outline-info' : 'btn-info' }}">
+                                            {{ $company->is_verified ? 'Retirer badge' : 'Certifier' }}
+                                        </button>
+                                    </form>
+                                    <form method="POST" action="{{ route('adminToggleSuspendCompanyWeb') }}" class="d-inline">
                                         @csrf
                                         <input type="hidden" name="company_id" value="{{ $company->id }}">
                                         <button type="submit" class="btn btn-sm {{ $company->is_suspended ? 'btn-success' : 'btn-danger' }}">

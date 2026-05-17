@@ -24,6 +24,16 @@ use Illuminate\Support\Facades\Validator;
 
 class CompanyController extends Controller
 {
+    private function hasVerifiedEmail(Company $company): bool
+    {
+        return $company->email_verified_at !== null;
+    }
+
+    private function emailVerifiedCompanyQuery()
+    {
+        return Company::whereNotNull('email_verified_at');
+    }
+
     private function resolveFollowerCompanyActor(Request $request, ?User $user)
     {
         if (!$request->filled('follower_company_id')) {
@@ -140,7 +150,7 @@ class CompanyController extends Controller
             return response()->json(['status' => false, 'message' => 'Invalid email or password.']);
         }
 
-        if ((int) $company->is_verified !== 1) {
+        if (!$this->hasVerifiedEmail($company)) {
             return response()->json([
                 'status' => false,
                 'message' => 'Please verify your email before login.',
@@ -199,7 +209,7 @@ class CompanyController extends Controller
             return response()->json(['status' => false, 'message' => 'Company not found.']);
         }
 
-        if ((int) $company->is_verified === 1) {
+        if ($this->hasVerifiedEmail($company)) {
             $this->applyCompanyDeviceFromRequest($company, $request);
             $ownerResult = $this->ensureCompanyOwnerUser($company, $request);
             if (isset($ownerResult['error'])) {
@@ -229,7 +239,6 @@ class CompanyController extends Controller
             return response()->json(['status' => false, 'message' => 'Verification code expired. Please request a new one.']);
         }
 
-        $company->is_verified = 1;
         $company->email_verified_at = now();
         $company->email_verification_code = null;
         $company->email_verification_expires_at = null;
@@ -510,7 +519,7 @@ class CompanyController extends Controller
             return response()->json(['status' => false, 'message' => 'Company not found.']);
         }
 
-        if ((int) $company->is_verified === 1) {
+        if ($this->hasVerifiedEmail($company)) {
             return response()->json(['status' => true, 'message' => 'Email already verified.', 'data' => $company]);
         }
 
@@ -789,8 +798,8 @@ class CompanyController extends Controller
             return response()->json(['status' => false, 'message' => $validator->errors()->first()]);
         }
 
-        $company = Company::where('id', $request->company_id)
-            ->where('is_verified', 1)
+        $company = $this->emailVerifiedCompanyQuery()
+            ->where('id', $request->company_id)
             ->where('is_suspended', 0)
             ->first();
 
@@ -893,7 +902,10 @@ class CompanyController extends Controller
             return $followerCompany;
         }
 
-        $company = Company::where('id', $request->company_id)->where('is_verified', 1)->where('is_suspended', 0)->first();
+        $company = $this->emailVerifiedCompanyQuery()
+            ->where('id', $request->company_id)
+            ->where('is_suspended', 0)
+            ->first();
         if (!$company) {
             return response()->json(['status' => false, 'message' => 'Company not found.']);
         }
@@ -1059,8 +1071,8 @@ class CompanyController extends Controller
             : $companyIdsQuery->whereNull('follower_company_id');
         $companyIds = $companyIdsQuery->pluck('company_id');
 
-        $companies = Company::whereIn('id', $companyIds)
-            ->where('is_verified', 1)
+        $companies = $this->emailVerifiedCompanyQuery()
+            ->whereIn('id', $companyIds)
             ->where('is_suspended', 0)
             ->orderBy('name')
             ->skip($start)

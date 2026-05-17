@@ -337,6 +337,34 @@ class ApplicationController extends Controller
     }
 
     /**
+     * Admin: grant or remove the public ITGA company certification badge.
+     */
+    public function toggleVerifyCompany(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'company_id' => 'required|integer|exists:companies,id',
+        ]);
+
+        if ($validator->fails()) {
+            return response()->json(['status' => false, 'message' => $validator->errors()->first()]);
+        }
+
+        $company = Company::find($request->company_id);
+        if (!$company) {
+            return response()->json(['status' => false, 'message' => 'Company not found.']);
+        }
+
+        $company->is_verified = $company->is_verified ? 0 : 1;
+        $company->save();
+
+        return response()->json([
+            'status' => true,
+            'message' => $company->is_verified ? 'Company certified.' : 'Company certification removed.',
+            'data' => $company,
+        ]);
+    }
+
+    /**
      * Admin: Job board KPIs.
      */
     public function fetchJobKPIs(Request $request)
@@ -470,5 +498,22 @@ class ApplicationController extends Controller
         $company->save();
 
         return back()->with('success', $company->is_suspended ? 'Entreprise suspendue.' : 'Entreprise réactivée.');
+    }
+
+    public function adminToggleVerifyCompanyWeb(Request $request)
+    {
+        $validator = Validator::make($request->all(), [
+            'company_id' => 'required|integer|exists:companies,id',
+        ]);
+
+        if ($validator->fails()) {
+            return back()->with('error', $validator->errors()->first());
+        }
+
+        $company = Company::find($request->company_id);
+        $company->is_verified = $company->is_verified ? 0 : 1;
+        $company->save();
+
+        return back()->with('success', $company->is_verified ? 'Entreprise certifiee.' : 'Certification entreprise retiree.');
     }
 }

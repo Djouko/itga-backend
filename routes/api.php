@@ -211,6 +211,7 @@ Route::prefix('AdminJob')->middleware(['checkHeader', 'checkAdminHeader', 'throt
     Route::post('moderateJob', [ApplicationController::class, 'moderateJob']);
     Route::post('fetchCompanies', [ApplicationController::class, 'fetchCompaniesAdmin']);
     Route::post('toggleSuspendCompany', [ApplicationController::class, 'toggleSuspendCompany']);
+    Route::post('toggleVerifyCompany', [ApplicationController::class, 'toggleVerifyCompany']);
     Route::post('fetchJobKPIs', [ApplicationController::class, 'fetchJobKPIs']);
 });
 
