@@ -779,6 +779,117 @@ Si cela echoue:
 tail -n 100 storage/logs/laravel.log
 ```
 
+### 4.7.1 Si readiness affiche `"environment": "local"`
+
+Si tu vois ceci:
+
+```json
+"environment": "local"
+```
+
+alors le backend n'est pas encore en mode production Laravel, meme si `ok` vaut `true`.
+
+C'est important: en mode `local`, Laravel accepte certaines choses que nous voulons bloquer en production. Donc pour le vrai public, le resultat attendu doit etre:
+
+```json
+"environment": "production"
+```
+
+Dans le fichier `.env` du serveur, dans le meme dossier que `artisan`, mets exactement:
+
+```env
+APP_ENV=production
+APP_DEBUG=false
+APP_URL=https://itga.kekottech.com
+```
+
+Ensuite, dans SSH Hostinger:
+
+```bash
+cd /home/<ton_user_hostinger>/domains/<ton_domaine>/public_html
+php artisan optimize:clear
+php artisan config:clear
+php artisan cache:clear
+php artisan config:cache
+php artisan route:cache
+php artisan view:cache
+php artisan ops:public-readiness --json
+```
+
+Le resultat attendu est:
+
+```json
+{
+  "ok": true,
+  "environment": "production"
+}
+```
+
+Si cela affiche encore `local`, il y a seulement quelques causes probables:
+
+1. Tu as modifie le mauvais fichier `.env`.
+2. Tu n'es pas dans le bon dossier Laravel.
+3. Laravel utilise encore un cache de config ancien.
+4. Hostinger n'a pas les permissions pour ecrire dans `bootstrap/cache`.
+
+Verifie le dossier courant:
+
+```bash
+pwd
+ls
+```
+
+Tu dois voir:
+
+```text
+artisan
+composer.json
+app
+bootstrap
+config
+database
+public
+routes
+storage
+```
+
+Verifie la valeur lue par Artisan:
+
+```bash
+php artisan env
+```
+
+Verifie le `.env` visible dans ce dossier:
+
+```bash
+grep -E "^(APP_ENV|APP_DEBUG|APP_URL|API_SECRET_KEY|ADMIN_API_SECRET_KEY|READINESS_TOKEN|CACHE_DRIVER|SESSION_DRIVER|QUEUE_CONNECTION|FILESYSTEM_DRIVER)=" .env
+```
+
+Si `php artisan env` dit encore `local` alors que `.env` contient `APP_ENV=production`, supprime le cache config puis recree-le:
+
+```bash
+rm -f bootstrap/cache/config.php
+php artisan config:clear
+php artisan config:cache
+php artisan env
+php artisan ops:public-readiness --json
+```
+
+Pour Firebase, si ton `.env` contient:
+
+```env
+GOOGLE_APPLICATION_CREDENTIALS=itga-firebase-prod.json
+GOOGLE_CREDENTIALS_PATH=itga-firebase-prod.json
+```
+
+alors le fichier reel doit exister dans le dossier Laravel, au meme niveau que `artisan`:
+
+```bash
+ls -l itga-firebase-prod.json
+```
+
+Si ce fichier n'existe pas, les notifications ou services Firebase peuvent echouer meme si le reste du backend fonctionne.
+
 ### 4.8 Connecter Hostinger a GitHub plus tard
 
 Hostinger permet le deploiement Git depuis hPanel, mais le dossier d'installation doit etre vide au moment de creer le repository. Donc ne le fais pas brutalement sur le dossier actuel en production.
